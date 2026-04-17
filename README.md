@@ -1,4 +1,4 @@
-Deep Dive Video & Meeting Note Taker
+ BREVITY a Deep Dive Video & Meeting Note Taker
 
 An AI-powered application that transforms long-form videos, lectures, and meetings into structured notes, key timestamps, and actionable insights using speech-to-text, large language models, and retrieval-augmented generation (RAG).
 
