@@ -1,10 +1,12 @@
+import React from 'react';
+import { Layout, Play, Clock, FileText, CheckCircle, Settings, Share2, Search } from 'lucide-react';
 import Transcript from '../components/Transcript';
 import IntelligencePanel from '../components/IntelligencePanel';
 import VideoPlayer from '../components/VideoPlayer';
 import useStore from '../store/useStore';
 
 const Dashboard = () => {
-  const { currentSession } = useStore();
+  const currentSession = useStore((state) => state.currentSession);
 
   return (
     <div className="flex h-screen bg-[#0f172a] text-slate-50 font-sans overflow-hidden selection:bg-indigo-500/30">

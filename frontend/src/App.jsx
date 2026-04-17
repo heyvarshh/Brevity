@@ -4,7 +4,7 @@ import SourceInput from './components/SourceInput';
 import useStore from './store/useStore';
 
 function App() {
-  const { currentSession } = useStore();
+  const currentSession = useStore((state) => state.currentSession);
   const [showDashboard, setShowDashboard] = useState(false);
 
   return (
