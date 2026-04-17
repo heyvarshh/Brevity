@@ -1,16 +1,76 @@
-# React + Vite
+Frontend – Deep Dive Video & Meeting Note Taker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend for the AI-powered Deep Dive Video & Meeting Note Taker. It provides a fast, responsive, and intuitive interface for uploading content, viewing structured notes, and interacting with AI-generated insights.
 
-Currently, two official plugins are available:
+Built using React and Vite, the frontend focuses on performance, modularity, and user experience.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+⸻
 
-## React Compiler
+Overview
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The frontend enables users to:
 
-## Expanding the ESLint configuration
+* Input YouTube links or upload media files
+* View AI-generated summaries and structured notes
+* Navigate content using timestamped insights
+* Search within transcripts using semantic queries
+* Track extracted action items
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+It is designed to feel like a real-world SaaS product with a clean and minimal interface.
+
+⸻
+
+Tech Stack
+
+* React (Vite)
+* Tailwind CSS
+* Axios (API communication)
+* React Router (navigation)
+* Recharts / Chart.js (data visualization)
+
+⸻
+
+Features
+
+Input Interface
+
+* Accept YouTube URLs and file uploads
+* Clean and simple input flow
+
+Video + Notes Layout
+
+* Split screen interface:
+    * Video player (left)
+    * Notes and insights (right)
+
+Structured Notes Viewer
+
+* Sectioned summaries with headings and bullet points
+* Toggle between summary modes (planned)
+
+Timestamp Navigation
+
+* Clickable timestamps
+* Jump directly to relevant video segments
+
+Transcript Viewer
+
+* Full transcript with timestamps
+* Highlight important sections
+
+Action Items Panel
+
+* Displays extracted:
+    * Tasks
+    * Ideas
+    * Questions
+
+Semantic Search UI
+
+* Ask questions about the content
+* Displays contextual answers from backend (RAG)
+
+Responsive Design
+
+* Works across desktop and mobile
+* Optimized for readability and usability
