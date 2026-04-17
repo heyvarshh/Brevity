@@ -2,6 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import api_router
 from app.core.config import settings
+from app.db.session import engine
+from app.db.base_class import Base
+
+# Note: In a production app, use Alembic migrations. 
+# For this MVP, we create tables on startup if they don't exist.
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

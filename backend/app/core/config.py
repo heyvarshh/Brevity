@@ -27,8 +27,11 @@ class Settings(BaseSettings):
     @validator("SQLALCHEMY_DATABASE_URI", pre=True)
     def assemble_db_connection(cls, v: Optional[str], values: dict) -> any:
         if isinstance(v, str):
+            # Handle Railway/Heroku postgres:// vs postgresql://
+            if v.startswith("postgres://"):
+                return v.replace("postgres://", "postgresql://", 1)
             return v
-        return f"postgresql://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@{values.get('POSTGRES_SERVER')}/{values.get('POSTGRES_DB')}"
+        return f"postgresql://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@{values.get('POSTGRES_SERVER')}:{values.get('POSTGRES_PORT', '5432')}/{values.get('POSTGRES_DB')}"
 
     # AI Config
     OPENAI_API_KEY: Optional[str] = None
