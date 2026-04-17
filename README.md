@@ -2,8 +2,6 @@
 
 An AI-powered application that transforms long-form videos, lectures, and meetings into structured notes, key timestamps, and actionable insights using speech-to-text, large language models, and retrieval-augmented generation (RAG).
 
-⸻
-
 Overview
 
 This system is designed to help users efficiently consume long-duration content by automatically generating meaningful, structured outputs.
@@ -14,8 +12,6 @@ Instead of manually taking notes, users can input a video or audio source and re
 * Timestamp-linked key insights
 * Extracted action items (tasks, ideas, questions)
 * Semantic search capabilities over content
-
-⸻
 
 Features
 
@@ -68,7 +64,6 @@ Export Options
 * Export notes as PDF or Markdown
 * Save sessions for future access
 
-⸻
 
 Frontend
 
@@ -93,7 +88,6 @@ Frontend Features
 * Semantic search interface
 * Responsive design
 
-⸻
 
 Backend (Overview)
 
@@ -113,14 +107,14 @@ Responsibilities
 * Embedding generation
 * RAG-based retrieval
 
-⸻
+
 
 Database
 
 * PostgreSQL for structured data
 * Vector database (Pinecone / FAISS / Weaviate) for embeddings
 
-⸻
+
 
 Architecture
 
