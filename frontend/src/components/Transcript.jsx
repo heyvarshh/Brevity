@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import useStore from '../store/useStore';
+import { useStore } from '../store/useStore';
 
 const Transcript = () => {
   const { transcript, currentVideoTime, setVideoTime } = useStore();

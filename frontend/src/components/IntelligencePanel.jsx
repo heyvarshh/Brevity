@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, ClipboardList, Target, MessageSquare } from 'lucide-react';
-import useStore from '../store/useStore';
+import { useStore } from '../store/useStore';
 
 const IntelligencePanel = () => {
   const [activeTab, setActiveTab] = useState('Summary');

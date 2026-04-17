@@ -1,9 +1,8 @@
-import React from 'react';
-import { Layout, Play, Clock, FileText, CheckCircle, Settings, Share2, Search } from 'lucide-react';
+import { LayoutDashboard, Play, Clock, FileText, CheckCircle, Settings, Share2, Search } from 'lucide-react';
 import Transcript from '../components/Transcript';
 import IntelligencePanel from '../components/IntelligencePanel';
 import VideoPlayer from '../components/VideoPlayer';
-import useStore from '../store/useStore';
+import { useStore } from '../store/useStore';
 
 const Dashboard = () => {
   const currentSession = useStore((state) => state.currentSession);
@@ -13,7 +12,7 @@ const Dashboard = () => {
       {/* Sidebar - Compact & Elegant */}
       <aside className="w-16 flex flex-col items-center py-6 border-r border-slate-800 bg-[#0f172a]/80 backdrop-blur-2xl z-20">
         <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center mb-10 shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:scale-105 transition-transform cursor-pointer">
-          <Layout className="text-white" size={20} />
+          <LayoutDashboard className="text-white" size={20} />
         </div>
         <nav className="flex flex-col gap-8 flex-1">
           <button className="text-indigo-400 p-2 bg-indigo-400/10 rounded-xl"><Play size={22} /></button>

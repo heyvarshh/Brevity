@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-const useStore = create((set) => ({
+export const useStore = create((set) => ({
   currentSession: null,
   currentVideoTime: 0,
   isPlaying: false,
@@ -17,5 +17,3 @@ const useStore = create((set) => ({
   setActionItems: (items) => set({ actionItems: items }),
   setConcepts: (concepts) => set({ concepts }),
 }));
-
-export default useStore;

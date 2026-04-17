@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
-import useStore from '../store/useStore';
+import { useStore } from '../store/useStore';
 
 const ConceptGraph = () => {
   const d3Container = useRef(null);

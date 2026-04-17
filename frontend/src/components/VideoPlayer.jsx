@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import useStore from '../store/useStore';
+import { useStore } from '../store/useStore';
 
 const VideoPlayer = () => {
   const { currentSession, setVideoTime, setIsPlaying } = useStore();

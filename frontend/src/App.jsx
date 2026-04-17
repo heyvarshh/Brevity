@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Dashboard from './pages/Dashboard';
 import SourceInput from './components/SourceInput';
-import useStore from './store/useStore';
+import { useStore } from './store/useStore';
 
 function App() {
   const currentSession = useStore((state) => state.currentSession);

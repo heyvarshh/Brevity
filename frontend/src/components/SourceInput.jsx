@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Video, Upload, Mic, ArrowRight, Loader2 } from 'lucide-react';
 import api from '../services/api';
-import useStore from '../store/useStore';
+import { useStore } from '../store/useStore';
 
 const SourceInput = ({ onComplete }) => {
   const [url, setUrl] = useState('');
