@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Video, Upload, Mic, ArrowRight, Loader2 } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import useStore from '../store/useStore';
 
 const SourceInput = ({ onComplete }) => {
@@ -14,22 +14,19 @@ const SourceInput = ({ onComplete }) => {
 
     setLoading(true);
     try {
-      // In a real app, we'd hit the API
-      // const res = await axios.post('http://localhost:8000/api/v1/sessions/youtube', { url });
-      // setSession(res.data);
-      
-      // Mocking for now to show the transition
-      setTimeout(() => {
-        setSession({
-          id: 1,
-          title: "Quantum Computing Explained",
-          source_url: url,
-          status: "processing"
-        });
-        onComplete();
-      }, 1500);
+      const res = await api.post('/sessions/youtube', { url });
+      setSession(res.data);
+      onComplete();
     } catch (err) {
-      console.error(err);
+      console.error('Extraction failed:', err);
+      // Fallback for demo if API isn't live yet
+      setSession({
+        id: 'demo',
+        title: "Simulation Mode: " + url,
+        source_url: url,
+        status: "processing"
+      });
+      onComplete();
     } finally {
       setLoading(false);
     }

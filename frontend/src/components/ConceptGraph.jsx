@@ -21,8 +21,8 @@ const ConceptGraph = () => {
         .attr("viewBox", [0, 0, width, height]);
 
       // Mock links between concepts for visualization
-      const nodes = concepts.map((c, i) => ({ id: c.name, ...c }));
-      const links = nodes.length > 1 ? nodes.slice(1).map((n, i) => ({
+      const nodes = concepts.map((c) => ({ id: c.name, ...c }));
+      const links = nodes.length > 1 ? nodes.slice(1).map((n) => ({
         source: nodes[0].id,
         target: n.id
       })) : [];
