@@ -1,29 +1,24 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
-
-const Summary = sequelize.define('Summary', {
-  id: {
-    type: DataTypes.INTEGER,
-    primary_key: true,
-    autoIncrement: true,
-  },
-  mode: {
-    type: DataTypes.STRING,
-  },
-  content: {
-    type: DataTypes.TEXT,
-    allowNull: false,
-  },
-  session_id: {
-    type: DataTypes.INTEGER,
-    references: {
-      model: 'session',
-      key: 'id',
+module.exports = (sequelize, DataTypes) => {
+  return sequelize.define("Summary", {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
     },
-  },
-}, {
-  tableName: 'summary',
-  timestamps: false,
-});
 
-module.exports = Summary;
+    mode: {
+      type: DataTypes.STRING
+    },
+
+    content: {
+      type: DataTypes.TEXT
+    },
+
+    session_id: {
+      type: DataTypes.INTEGER
+    }
+  }, {
+    tableName: "summaries",
+    timestamps: false
+  });
+};
