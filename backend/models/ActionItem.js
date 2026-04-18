@@ -4,36 +4,38 @@ const sequelize = require('../config/db');
 const ActionItem = sequelize.define('ActionItem', {
   id: {
     type: DataTypes.INTEGER,
-    primary_key: true,
-    autoIncrement: true,
+    primaryKey: true,
+    autoIncrement: true
   },
+
   content: {
     type: DataTypes.TEXT,
-    allowNull: false,
+    allowNull: false
   },
+
   type: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING
   },
+
   timestamp: {
-    type: DataTypes.FLOAT,
+    type: DataTypes.FLOAT
   },
+
   assignee: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING
   },
+
   status: {
     type: DataTypes.STRING,
-    defaultValue: 'pending',
+    defaultValue: 'pending'
   },
+
   session_id: {
-    type: DataTypes.INTEGER,
-    references: {
-      model: 'session',
-      key: 'id',
-    },
-  },
+    type: DataTypes.INTEGER
+  }
 }, {
-  tableName: 'actionitem',
-  timestamps: false,
+  tableName: 'action_items',
+  timestamps: false
 });
 
 module.exports = ActionItem;
