@@ -1,25 +1,18 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
-// IMPORTANT: factory-style imports ONLY
-const SessionModel = require('./Session');
-const TranscriptChunkModel = require('./TranscriptChunk');
-const SummaryModel = require('./Summary');
-const ActionItemModel = require('./ActionItem');
-const ConceptModel = require('./Concept');
+const Session = require('./Session')(sequelize, DataTypes);
+const TranscriptChunk = require('./TranscriptChunk')(sequelize, DataTypes);
+const Summary = require('./Summary')(sequelize, DataTypes);
+const ActionItem = require('./ActionItem')(sequelize, DataTypes);
+const Concept = require('./Concept')(sequelize, DataTypes);
+const User = require('./User')(sequelize, DataTypes);
 
-// INIT MODELS (correct way)
-const Session = SessionModel(sequelize, DataTypes);
-const TranscriptChunk = TranscriptChunkModel(sequelize, DataTypes);
-const Summary = SummaryModel(sequelize, DataTypes);
-const ActionItem = ActionItemModel(sequelize, DataTypes);
-const Concept = ConceptModel(sequelize, DataTypes);
-
-// ASSOCIATIONS
-Session.hasMany(TranscriptChunk, { foreignKey: 'session_id', as: 'transcript_chunks' });
-Session.hasMany(Summary, { foreignKey: 'session_id', as: 'summaries' });
-Session.hasMany(ActionItem, { foreignKey: 'session_id', as: 'action_items' });
-Session.hasMany(Concept, { foreignKey: 'session_id', as: 'concepts' });
+// Associations
+Session.hasMany(TranscriptChunk, { foreignKey: 'session_id' });
+Session.hasMany(Summary, { foreignKey: 'session_id' });
+Session.hasMany(ActionItem, { foreignKey: 'session_id' });
+Session.hasMany(Concept, { foreignKey: 'session_id' });
 
 TranscriptChunk.belongsTo(Session, { foreignKey: 'session_id' });
 Summary.belongsTo(Session, { foreignKey: 'session_id' });
@@ -32,5 +25,6 @@ module.exports = {
   TranscriptChunk,
   Summary,
   ActionItem,
-  Concept
+  Concept,
+  User
 };
