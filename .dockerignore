@@ -1,0 +1,17 @@
+frontend/
+node_modules/
+.git/
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.db
+sql_app.db
+data/
+outputs/
+test_results.txt
+*.log
+docker-compose*.yml
+project.json
+vercel.json

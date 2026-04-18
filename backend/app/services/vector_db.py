@@ -1,59 +1,54 @@
-import faiss
 import numpy as np
-import os
-import pickle
 from typing import List, Dict, Any
 
 class VectorDB:
     def __init__(self, dimension: int = 1536):
         self.dimension = dimension
-        self.index = faiss.IndexFlatIP(dimension) # Inner Product (for cosine similarity with normalized vectors)
-        self.metadata = [] # Stores mapping from index to transcript_chunk_id
+        self.vectors = []
+        self.metadata = []
 
     def add_embeddings(self, embeddings: List[List[float]], metadata: List[Dict[str, Any]]):
         """
-        Adds embeddings and associated metadata to the index.
+        Adds embeddings and associated metadata to the in-memory store.
         """
         if not embeddings:
             return
             
-        embeddings_np = np.array(embeddings).astype('float32')
-        # Normalize for cosine similarity
-        faiss.normalize_L2(embeddings_np)
-        
-        self.index.add(embeddings_np)
+        self.vectors.extend(embeddings)
         self.metadata.extend(metadata)
 
     def search(self, query_embedding: List[float], k: int = 5) -> List[Dict[str, Any]]:
         """
-        Searches for the k most similar chunks to the query embedding.
+        Searches for the k most similar chunks using simple NumPy cosine similarity.
         """
-        query_np = np.array([query_embedding]).astype('float32')
-        faiss.normalize_L2(query_np)
+        if not self.vectors:
+            return []
+            
+        # Convert to numpy for vector operations
+        vectors_np = np.array(self.vectors)
+        query_np = np.array(query_embedding)
         
-        distances, indices = self.index.search(query_np, k)
+        # Calculate cosine similarity: (A . B) / (||A|| * ||B||)
+        dot_product = np.dot(vectors_np, query_np)
+        norms = np.linalg.norm(vectors_np, axis=1) * np.linalg.norm(query_np)
+        similarities = dot_product / (norms + 1e-9)
+        
+        # Get top k indices
+        top_indices = np.argsort(similarities)[-k:][::-1]
         
         results = []
-        for i in range(len(indices[0])):
-            idx = indices[0][i]
-            if idx != -1: # FAISS returns -1 if not enough results
-                results.append({
-                    "metadata": self.metadata[idx],
-                    "score": float(distances[0][i])
-                })
+        for idx in top_indices:
+            results.append({
+                "metadata": self.metadata[idx],
+                "score": float(similarities[idx])
+            })
         return results
 
     def save(self, path: str):
-        if not os.path.exists(os.path.dirname(path)):
-            os.makedirs(os.path.dirname(path))
-        faiss.write_index(self.index, f"{path}.index")
-        with open(f"{path}.meta", "wb") as f:
-            pickle.dump(self.metadata, f)
+        # Persistent VDB disabled for lightweight version to save disk space
+        pass
 
     def load(self, path: str):
-        if os.path.exists(f"{path}.index"):
-            self.index = faiss.read_index(f"{path}.index")
-            with open(f"{path}.meta", "rb") as f:
-                self.metadata = pickle.load(f)
+        pass
 
 vector_db = VectorDB()

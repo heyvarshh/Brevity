@@ -1,14 +1,25 @@
+import json
+import os
+import asyncio
 from app.models.transcript import TranscriptChunk
 from app.models.summary import Summary
 from app.models.action_item import ActionItem
 from app.models.concept import Concept
+from app.models.session import Session
 from app.services.llm import llm_service
+from app.services.transcription import transcription_service
+from app.services.diarization import diarization_service
 from app.services.embeddings import embedding_service
-from app.services.vector_db import VectorDB
-from app.db.redis import redis_client
+from app.services.vector_db import vector_db
+from app.services.downloader import downloader_service
+from app.db.session import SessionLocal
+from app.core.sockets import manager
 
-@celery_app.task(name="process_video_task", bind=True)
-def process_video_task(self, session_id: int):
+async def process_video_async(session_id: int):
+    """
+    Lightweight background processor for Render Free Tier.
+    Does not require Celery or Redis.
+    """
     db = SessionLocal()
     try:
         # 1. Fetch Session
@@ -19,7 +30,7 @@ def process_video_task(self, session_id: int):
         # Update status
         session.status = "downloading"
         db.commit()
-        redis_client.publish(f"session_status_{session_id}", json.dumps({"status": "downloading", "progress": 10}))
+        await manager.broadcast(session_id, {"status": "downloading", "progress": 10})
 
         # 2. Download Audio
         temp_dir = "/tmp/deepdive"
@@ -29,26 +40,20 @@ def process_video_task(self, session_id: int):
         if not audio_path:
             session.status = "failed"
             db.commit()
+            await manager.broadcast(session_id, {"status": "failed", "error": "Download failed"})
             return "Download failed"
 
         # 3. Transcribe
         session.status = "transcribing"
         db.commit()
-        redis_client.publish(f"session_status_{session_id}", json.dumps({"status": "transcribing", "progress": 30}))
+        await manager.broadcast(session_id, {"status": "transcribing", "progress": 30})
         
+        # Groq is ultra-fast, so we call it here
         raw_transcript = transcription_service.transcribe(audio_path)
         segments = transcription_service.process_segments(raw_transcript)
 
-        # 4. Diarization (Optional based on HF token)
-        try:
-            diar_results = diarization_service.process(audio_path)
-            if diar_results:
-                segments = diarization_service.match_speakers(segments, diar_results)
-        except Exception as e:
-            print(f"Diarization skipped/failed: {e}")
-
-        # 5. Store Chunks
-        for idx, seg in enumerate(segments):
+        # 4. Store Chunks
+        for seg in segments:
             chunk = TranscriptChunk(
                 content=seg["content"],
                 start_time=seg["start_time"],
@@ -58,13 +63,13 @@ def process_video_task(self, session_id: int):
             )
             db.add(chunk)
         
-        # 6. Intelligence & Knowledge Extraction
-        redis_client.publish(f"session_status_{session_id}", json.dumps({"status": "extracting", "progress": 70}))
+        # 5. Intelligence & Knowledge Extraction
+        await manager.broadcast(session_id, {"status": "extracting", "progress": 70})
         
         full_text = " ".join([seg["content"] for seg in segments])
         
         # a. Multiple Summaries
-        for mode in ["quick", "structured", "meeting"]: # Run a few major ones by default
+        for mode in ["quick", "structured", "meeting"]:
             content = llm_service.summarize(full_text, mode)
             summary = Summary(mode=mode, content=content, session_id=session_id)
             db.add(summary)
@@ -88,18 +93,20 @@ def process_video_task(self, session_id: int):
             )
             db.add(concept)
 
-        # 7. Indexing for semantic search
-        redis_client.publish(f"session_status_{session_id}", json.dumps({"status": "indexing", "progress": 90}))
+        # 6. Indexing for semantic search (Lightweight)
+        await manager.broadcast(session_id, {"status": "indexing", "progress": 90})
         
         chunk_texts = [seg["content"] for seg in segments]
         if chunk_texts:
+            # Note: We'll use a simpler embedding or just skip if no key
             embeddings = embedding_service.get_embeddings(chunk_texts)
-            vdb = VectorDB()
-            vdb.add_embeddings(embeddings, [{"session_id": session_id, "text": t, "start": seg["start_time"]} for t, seg in zip(chunk_texts, segments)])
-            vdb.save(f"/tmp/deepdive/index_{session_id}")
+            if embeddings:
+                vector_db.add_embeddings(embeddings, [{"session_id": session_id, "text": t, "start": seg["start_time"]} for t, seg in zip(chunk_texts, segments)])
 
-        # 8. Wrap up
+        # 7. Wrap up
         session.status = "completed"
+        db.commit()
+        await manager.broadcast(session_id, {"status": "completed", "progress": 100})
 
         # Clean up audio file
         if os.path.exists(audio_path):
@@ -108,9 +115,11 @@ def process_video_task(self, session_id: int):
         return f"Successfully processed session {session_id}"
 
     except Exception as e:
+        print(f"Error processing session {session_id}: {e}")
         if 'session' in locals() and session:
             session.status = "failed"
             db.commit()
+            await manager.broadcast(session_id, {"status": "failed", "error": str(e)})
         return f"Error: {str(e)}"
     finally:
         db.close()

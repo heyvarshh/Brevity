@@ -1,15 +1,19 @@
-from openai import OpenAI
+import google.generativeai as genai
 from app.core.config import settings
 from typing import List, Dict, Any, Optional
 import json
 
 class LLMService:
     def __init__(self):
-        self.client = OpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
+        if settings.GEMINI_API_KEY:
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+            self.model = genai.GenerativeModel('gemini-1.5-flash')
+        else:
+            self.model = None
 
     def summarize(self, text: str, mode: str) -> str:
         """
-        Generates a summary based on the requested mode.
+        Generates a summary based on the requested mode using Gemini.
         """
         prompts = {
             "quick": "Give a 5-bullet TL;DR summary of this transcript.",
@@ -22,70 +26,42 @@ class LLMService:
         
         prompt = prompts.get(mode, prompts["quick"])
         
-        if not self.client:
-            return f"LLM client not configured. Content summary for mode: {mode}"
+        if not self.model:
+            return f"Gemini API key not configured. Content summary for mode: {mode}"
 
-        response = self.client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are a brilliant intelligence partner that understands content deeply."},
-                {"role": "user", "content": f"{prompt}\n\nTranscript:\n{text}"}
-            ]
-        )
-        return response.choices[0].message.content
+        response = self.model.generate_content(f"{prompt}\n\nTranscript:\n{text}")
+        return response.text
 
     def extract_intelligence(self, text: str) -> Dict[str, Any]:
         """
-        Extracts action items and concepts from the transcript using tool calling/JSON mode.
+        Extracts action items and concepts from the transcript using Gemini.
         """
-        if not self.client:
+        if not self.model:
             return {"action_items": [], "concepts": []}
 
-        tools = [
-            {
-                "type": "function",
-                "function": {
-                    "name": "extract_intelligence",
-                    "description": "Extracts actionable items and key concepts from text",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "action_items": {
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "content": {"type": "string"},
-                                        "type": {"type": "string", "enum": ["task", "follow-up", "decision", "question"]},
-                                        "assignee": {"type": "string"}
-                                    }
-                                }
-                            },
-                            "concepts": {
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "name": {"type": "string"},
-                                        "description": {"type": "string"}
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        ]
+        # Gemini 1.5 performs very well with JSON instructions in the prompt
+        prompt = f"""
+        Extract actionable intelligence from the following transcript. 
+        Return the result ONLY as a JSON object with these keys: 
+        "action_items": [{{ "content": string, "type": "task"|"follow-up"|"decision"|"question", "assignee": string|null }}]
+        "concepts": [{{ "name": string, "description": string }}]
 
-        response = self.client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": text}],
-            tools=tools,
-            tool_choice={"type": "function", "function": {"name": "extract_intelligence"}}
-        )
+        Transcript:
+        {text}
+        """
         
-        # Parse result
-        tool_call = response.choices[0].message.tool_calls[0]
-        return json.loads(tool_call.function.arguments)
+        response = self.model.generate_content(prompt)
+        
+        # Simple cleanup in case Gemini adds markdown backticks
+        json_str = response.text.strip()
+        if json_str.startswith("```json"):
+            json_str = json_str[7:-3].strip()
+        elif json_str.startswith("```"):
+            json_str = json_str[3:-3].strip()
+            
+        try:
+            return json.loads(json_str)
+        except:
+            return {"action_items": [], "concepts": []}
 
 llm_service = LLMService()

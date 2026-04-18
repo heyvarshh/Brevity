@@ -36,24 +36,8 @@ class Settings(BaseSettings):
     # AI Config
     OPENAI_API_KEY: Optional[str] = None
     COHERE_API_KEY: Optional[str] = None
-    
-    # Celery / Redis
-    REDIS_HOST: str = "localhost"
-    REDIS_PORT: int = 6379
-    CELERY_BROKER_URL: Optional[str] = None
-    CELERY_RESULT_BACKEND: Optional[str] = None
-
-    @validator("CELERY_BROKER_URL", pre=True)
-    def assemble_celery_broker(cls, v: Optional[str], values: dict) -> any:
-        if isinstance(v, str):
-            return v
-        return f"redis://{values.get('REDIS_HOST')}:{values.get('REDIS_PORT')}/0"
-
-    @validator("CELERY_RESULT_BACKEND", pre=True)
-    def assemble_celery_backend(cls, v: Optional[str], values: dict) -> any:
-        if isinstance(v, str):
-            return v
-        return f"redis://{values.get('REDIS_HOST')}:{values.get('REDIS_PORT')}/0"
+    GROQ_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
     
     class Config:
         case_sensitive = True
