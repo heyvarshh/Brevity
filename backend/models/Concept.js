@@ -4,25 +4,24 @@ const sequelize = require('../config/db');
 const Concept = sequelize.define('Concept', {
   id: {
     type: DataTypes.INTEGER,
-    primary_key: true,
-    autoIncrement: true,
+    primaryKey: true,
+    autoIncrement: true
   },
+
   name: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING
   },
+
   description: {
-    type: DataTypes.TEXT,
+    type: DataTypes.TEXT
   },
+
   session_id: {
-    type: DataTypes.INTEGER,
-    references: {
-      model: 'session',
-      key: 'id',
-    },
-  },
+    type: DataTypes.INTEGER
+  }
 }, {
-  tableName: 'concept',
-  timestamps: false,
+  tableName: 'concepts',
+  timestamps: false
 });
 
 module.exports = Concept;
