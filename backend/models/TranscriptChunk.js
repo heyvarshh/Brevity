@@ -1,37 +1,39 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
+module.exports = (sequelize, DataTypes) => {
+  const TranscriptChunk = sequelize.define(
+    "TranscriptChunk",
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
+      },
 
-const TranscriptChunk = sequelize.define('TranscriptChunk', {
-  id: {
-    type: DataTypes.INTEGER,
-    primary_key: true,
-    autoIncrement: true,
-  },
-  content: {
-    type: DataTypes.TEXT,
-    allowNull: false,
-  },
-  start_time: {
-    type: DataTypes.FLOAT,
-    allowNull: false,
-  },
-  end_time: {
-    type: DataTypes.FLOAT,
-    allowNull: false,
-  },
-  speaker: {
-    type: DataTypes.STRING,
-  },
-  session_id: {
-    type: DataTypes.INTEGER,
-    references: {
-      model: 'session',
-      key: 'id',
+      content: {
+        type: DataTypes.TEXT
+      },
+
+      start_time: {
+        type: DataTypes.FLOAT
+      },
+
+      end_time: {
+        type: DataTypes.FLOAT
+      },
+
+      speaker: {
+        type: DataTypes.STRING
+      },
+
+      session_id: {
+        type: DataTypes.INTEGER
+      }
     },
-  },
-}, {
-  tableName: 'transcriptchunk',
-  timestamps: false,
-});
+    {
+      tableName: "transcript_chunks",
+      timestamps: false,
+      freezeTableName: true
+    }
+  );
 
-module.exports = TranscriptChunk;
+  return TranscriptChunk;
+};
