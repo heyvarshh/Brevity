@@ -1,14 +1,18 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
+const isLocal = process.env.DATABASE_URL?.includes('localhost');
+
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: 'postgres',
   logging: false,
   dialectOptions: {
-    ssl: process.env.DATABASE_URL.includes('localhost') ? false : {
-      require: true,
-      rejectUnauthorized: false
-    }
+    ssl: isLocal
+      ? false
+      : {
+          require: true,
+          rejectUnauthorized: false
+        }
   }
 });
 
