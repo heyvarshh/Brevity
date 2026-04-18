@@ -5,18 +5,9 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true,
       autoIncrement: true
     },
-
-    mode: {
-      type: DataTypes.STRING
-    },
-
-    content: {
-      type: DataTypes.TEXT
-    },
-
-    session_id: {
-      type: DataTypes.INTEGER
-    }
+    mode: DataTypes.STRING,
+    content: DataTypes.TEXT,
+    session_id: DataTypes.INTEGER
   }, {
     tableName: "summaries",
     timestamps: false
