@@ -50,7 +50,7 @@ wss.on('connection', (ws) => {
 });
 
 // PORT (Render safe)
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT;
 
 // Start server (NEVER crashes)
 server.listen(PORT, () => {
