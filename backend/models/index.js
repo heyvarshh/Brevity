@@ -1,28 +1,50 @@
-const User = require('./User');
-const Session = require('./Session');
-const TranscriptChunk = require('./TranscriptChunk');
-const Summary = require('./Summary');
-const ActionItem = require('./ActionItem');
-const Concept = require('./Concept');
+const { Sequelize, DataTypes } = require('sequelize');
 
-// Associations
-User.hasMany(Session, { foreignKey: 'owner_id', as: 'sessions' });
-Session.belongsTo(User, { foreignKey: 'owner_id', as: 'owner' });
+// Safe DB initialization (prevents crash)
+const sequelize = process.env.DATABASE_URL
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: 'postgres',
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        }
+      },
+      logging: false
+    })
+  : null;
 
-Session.hasMany(TranscriptChunk, { foreignKey: 'session_id', as: 'transcript_chunks' });
-TranscriptChunk.belongsTo(Session, { foreignKey: 'session_id', as: 'session' });
+// Import models
+const SessionModel = require('./Session');
+const TranscriptChunkModel = require('./TranscriptChunk');
+const SummaryModel = require('./Summary');
+const ActionItemModel = require('./ActionItem');
+const ConceptModel = require('./Concept');
 
-Session.hasMany(Summary, { foreignKey: 'session_id', as: 'summaries' });
-Summary.belongsTo(Session, { foreignKey: 'session_id', as: 'session' });
+// Initialize models ONLY if DB exists
+let Session, TranscriptChunk, Summary, ActionItem, Concept;
 
-Session.hasMany(ActionItem, { foreignKey: 'session_id', as: 'action_items' });
-ActionItem.belongsTo(Session, { foreignKey: 'session_id', as: 'session' });
+if (sequelize) {
+  Session = SessionModel(sequelize, DataTypes);
+  TranscriptChunk = TranscriptChunkModel(sequelize, DataTypes);
+  Summary = SummaryModel(sequelize, DataTypes);
+  ActionItem = ActionItemModel(sequelize, DataTypes);
+  Concept = ConceptModel(sequelize, DataTypes);
 
-Session.hasMany(Concept, { foreignKey: 'session_id', as: 'concepts' });
-Concept.belongsTo(Session, { foreignKey: 'session_id', as: 'session' });
+  // Associations
+  Session.hasMany(TranscriptChunk, { as: 'transcript_chunks' });
+  Session.hasMany(Summary, { as: 'summaries' });
+  Session.hasMany(ActionItem, { as: 'action_items' });
+  Session.hasMany(Concept, { as: 'concepts' });
+
+  TranscriptChunk.belongsTo(Session);
+  Summary.belongsTo(Session);
+  ActionItem.belongsTo(Session);
+  Concept.belongsTo(Session);
+}
 
 module.exports = {
-  User,
+  sequelize,
   Session,
   TranscriptChunk,
   Summary,
