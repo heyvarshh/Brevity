@@ -5,19 +5,9 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true,
       autoIncrement: true
     },
-
-    title: {
-      type: DataTypes.STRING
-    },
-
-    source_url: {
-      type: DataTypes.TEXT
-    },
-
-    source_type: {
-      type: DataTypes.STRING
-    },
-
+    title: DataTypes.STRING,
+    source_url: DataTypes.TEXT,
+    source_type: DataTypes.STRING,
     status: {
       type: DataTypes.STRING,
       defaultValue: "pending"
