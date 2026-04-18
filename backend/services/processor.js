@@ -1,72 +1,117 @@
-const fs = require('fs');
-const path = require('path');
-const { Session, TranscriptChunk, Summary, ActionItem, Concept } = require('../models');
-const downloaderService = require('./downloader');
-const transcriptionService = require('./transcription');
-const llmService = require('./llm');
-const embeddingService = require('./embeddings');
-const vectorDb = require('./vector_db');
-const sequelize = require('../config/db');
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
+
+const { Session, TranscriptChunk, Summary, ActionItem, Concept } = require("../models");
+const downloaderService = require("./downloader");
+const transcriptionService = require("./transcription");
+const llmService = require("./llm");
+const embeddingService = require("./embeddings");
+const vectorDb = require("./vector_db");
+const sequelize = require("../config/db");
 
 async function processVideoAsync(sessionId, manager) {
   try {
-    const session = await Session.findByPk(sessionId);
-    if (!session) return "Session not found";
+    console.log("🔥 processVideoAsync STARTED:", sessionId);
 
-    // 1. Download
+    const session = await Session.findByPk(sessionId);
+    if (!session) {
+      console.log("❌ Session not found");
+      return;
+    }
+
+    // -------------------------
+    // 1. DOWNLOAD
+    // -------------------------
     session.status = "downloading";
     await session.save();
     manager.broadcast(sessionId, { status: "downloading", progress: 10 });
 
-    const tempDir = "/tmp/brevity";
-    const audioPath = await downloaderService.getYoutubeAudio(session.source_url, tempDir);
-    
-    if (!audioPath) {
-      session.status = "failed";
-      await session.save();
-      manager.broadcast(sessionId, { status: "failed", error: "Download failed" });
-      return;
+    const tempDir = path.join(os.tmpdir(), "brevity");
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
     }
 
-    // 2. Transcribe
+    console.log("⬇️ Downloading video...");
+    const audioPath = await downloaderService.getYoutubeAudio(session.source_url, tempDir);
+
+    if (!audioPath) {
+      throw new Error("YouTube audio download failed");
+    }
+
+    console.log("✅ Audio downloaded:", audioPath);
+
+    // -------------------------
+    // 2. TRANSCRIBE
+    // -------------------------
     session.status = "transcribing";
     await session.save();
     manager.broadcast(sessionId, { status: "transcribing", progress: 30 });
 
+    console.log("🎙️ Transcribing audio...");
     const rawTranscript = await transcriptionService.transcribe(audioPath);
+
+    if (!rawTranscript || rawTranscript.length === 0) {
+      throw new Error("Transcript generation failed (empty result)");
+    }
+
     const segments = transcriptionService.processSegments(rawTranscript);
 
-    // 3. Save Chunks
+    if (!segments || segments.length === 0) {
+      throw new Error("Transcript segmentation failed");
+    }
+
+    console.log(`✅ Segments generated: ${segments.length}`);
+
+    // -------------------------
+    // 3. SAVE TRANSCRIPT CHUNKS
+    // -------------------------
     const transaction = await sequelize.transaction();
+
     try {
       for (const seg of segments) {
-        await TranscriptChunk.create({
-          content: seg.content,
-          start_time: seg.start_time,
-          end_time: seg.end_time,
-          speaker: seg.speaker,
-          session_id: sessionId
-        }, { transaction });
+        await TranscriptChunk.create(
+          {
+            content: seg.content,
+            start_time: seg.start_time,
+            end_time: seg.end_time,
+            speaker: seg.speaker,
+            session_id: sessionId
+          },
+          { transaction }
+        );
       }
+
       await transaction.commit();
+      console.log("💾 Transcript chunks saved");
     } catch (err) {
       await transaction.rollback();
       throw err;
     }
 
-    // 4. Intelligence & Knowledge
+    // -------------------------
+    // 4. INTELLIGENCE (LLM)
+    // -------------------------
+    session.status = "extracting";
+    await session.save();
     manager.broadcast(sessionId, { status: "extracting", progress: 70 });
+
     const fullText = segments.map(s => s.content).join(" ");
 
-    // Summaries
+    console.log("🧠 Generating summaries...");
     for (const mode of ["quick", "structured", "meeting"]) {
       const content = await llmService.summarize(fullText, mode);
-      await Summary.create({ mode, content, session_id: sessionId });
+      await Summary.create({
+        mode,
+        content,
+        session_id: sessionId
+      });
     }
 
-    // Intelligence
+    console.log("🧠 Extracting intelligence...");
     const intel = await llmService.extractIntelligence(fullText);
-    for (const item of (intel.action_items || [])) {
+
+    for (const item of intel.action_items || []) {
       await ActionItem.create({
         content: item.content,
         type: item.type,
@@ -74,7 +119,8 @@ async function processVideoAsync(sessionId, manager) {
         session_id: sessionId
       });
     }
-    for (const con of (intel.concepts || [])) {
+
+    for (const con of intel.concepts || []) {
       await Concept.create({
         name: con.name,
         description: con.description,
@@ -82,35 +128,56 @@ async function processVideoAsync(sessionId, manager) {
       });
     }
 
-    // 5. Indexing
+    // -------------------------
+    // 5. EMBEDDINGS
+    // -------------------------
+    session.status = "indexing";
+    await session.save();
     manager.broadcast(sessionId, { status: "indexing", progress: 90 });
-    const embeddings = await embeddingService.getEmbeddings(segments.map(s => s.content));
-    if (embeddings.length > 0) {
-      vectorDb.addEmbeddings(embeddings, segments.map(s => ({
-        session_id: sessionId,
-        text: s.content,
-        start: s.start_time
-      })));
+
+    console.log("📦 Creating embeddings...");
+    const embeddings = await embeddingService.getEmbeddings(
+      segments.map(s => s.content)
+    );
+
+    if (embeddings && embeddings.length > 0) {
+      vectorDb.addEmbeddings(
+        embeddings,
+        segments.map(s => ({
+          session_id: sessionId,
+          text: s.content,
+          start: s.start_time
+        }))
+      );
     }
 
-    // 6. Finalize
+    // -------------------------
+    // 6. FINALIZE
+    // -------------------------
     session.status = "completed";
     await session.save();
     manager.broadcast(sessionId, { status: "completed", progress: 100 });
 
-    // Cleanup
-    if (fs.existsSync(audioPath)) {
+    console.log("🎉 PROCESS COMPLETED SUCCESSFULLY");
+
+    // cleanup
+    if (audioPath && fs.existsSync(audioPath)) {
       fs.unlinkSync(audioPath);
     }
 
   } catch (error) {
-    console.error(`Error processing session ${sessionId}:`, error);
+    console.error("❌ processVideoAsync ERROR:", error.message);
+
     const session = await Session.findByPk(sessionId);
     if (session) {
       session.status = "failed";
       await session.save();
     }
-    manager.broadcast(sessionId, { status: "failed", error: error.message });
+
+    manager.broadcast(sessionId, {
+      status: "failed",
+      error: error.message
+    });
   }
 }
 
